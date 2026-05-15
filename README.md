@@ -5,13 +5,13 @@ AI-powered personal finance tracker with spending analysis, anomaly detection, a
 ## Architecture
 
 ```
-Client (Next.js + React) → Vercel
+Client (Next.js + React)
         ↓
-Node.js + Express API → Railway/Render
+Node.js + Express API
         ↓
-Python/Django Intelligence → Railway/Render
+Python/Django Intelligence
         ↓
-PostgreSQL → Railway Managed DB
+PostgreSQL Database
 ```
 
 ## Services
@@ -92,19 +92,17 @@ npm run dev                   # Starts on :3000
 
 ## Deployment
 
-### Frontend → Vercel
-1. Push `frontend/` to GitHub
-2. Connect repo to Vercel
-3. Set `NEXT_PUBLIC_API_URL` to your Railway API URL
+### Frontend
+1. Build and export the Next.js app
+2. Set `NEXT_PUBLIC_API_URL` to your API server URL
+3. Deploy to your preferred static hosting or Node.js server
 
-### API → Railway
-1. Push `api/` to GitHub
-2. Deploy as Node.js service on Railway
-3. Add Railway PostgreSQL database
-4. Set `DATABASE_URL`, `JWT_SECRET`, `INTELLIGENCE_URL`, `FRONTEND_URL`
+### API
+1. Deploy as a Node.js service
+2. Connect to a PostgreSQL database
+3. Set `DATABASE_URL`, `JWT_SECRET`, `INTELLIGENCE_URL`, `FRONTEND_URL`
 
-### Intelligence → Railway
-1. Push `intelligence/` to GitHub
-2. Deploy as Python service on Railway
-3. Set `DATABASE_URL`, `SECRET_KEY`
-4. Start command: `gunicorn config.wsgi:application --bind 0.0.0.0:$PORT`
+### Intelligence
+1. Deploy as a Python service
+2. Set `DATABASE_URL`, `SECRET_KEY`
+3. Start command: `gunicorn config.wsgi:application --bind 0.0.0.0:$PORT`
