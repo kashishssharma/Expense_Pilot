@@ -20,7 +20,7 @@ export default function Goals() {
 
   const fetchGoals = async () => {
     try {
-      const { data } = await api.get('/goals');
+      const { data } = await api.get('/api/goals');
       setGoals(data.data);
     } catch (error) {
       toast.error('Failed to load goals');
@@ -37,10 +37,10 @@ export default function Goals() {
     e.preventDefault();
     try {
       if (editingId) {
-        await api.put(`/goals/${editingId}`, formData);
+        await api.put(`/api/goals/${editingId}`, formData);
         toast.success('Goal updated!');
       } else {
-        await api.post('/goals', formData);
+        await api.post('/api/goals', formData);
         toast.success('Goal created!');
       }
       setShowForm(false);
@@ -58,7 +58,7 @@ export default function Goals() {
     
     const newCurrent = Number(goal.current_amount) + Number(fundAmount);
     try {
-      await api.put(`/goals/${goal.id}`, { ...goal, current_amount: newCurrent });
+      await api.put(`/api/goals/${goal.id}`, { ...goal, current_amount: newCurrent });
       toast.success(`Added $${fundAmount} to ${goal.name}!`);
       setFundingId(null);
       setFundAmount('');
@@ -71,7 +71,7 @@ export default function Goals() {
   const deleteGoal = async (id) => {
     if (!confirm('Are you sure you want to delete this goal?')) return;
     try {
-      await api.delete(`/goals/${id}`);
+      await api.delete(`/api/goals/${id}`);
       toast.success('Goal deleted');
       fetchGoals();
     } catch (error) {
