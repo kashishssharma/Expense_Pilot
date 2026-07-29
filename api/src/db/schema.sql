@@ -50,17 +50,3 @@ CREATE INDEX IF NOT EXISTS idx_expenses_user_date ON expenses(user_id, date DESC
 CREATE INDEX IF NOT EXISTS idx_budgets_user_id ON budgets(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
--- ═══════════════════════════════════════════════════════════
--- GOALS TABLE
--- ═══════════════════════════════════════════════════════════
-CREATE TABLE IF NOT EXISTS goals (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    name VARCHAR(255) NOT NULL,
-    target_amount DECIMAL(12, 2) NOT NULL CHECK (target_amount > 0),
-    current_amount DECIMAL(12, 2) NOT NULL DEFAULT 0 CHECK (current_amount >= 0),
-    target_date DATE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_goals_user_id ON goals(user_id);

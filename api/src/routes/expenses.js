@@ -18,6 +18,8 @@ const router = express.Router();
 // All expense routes require authentication
 router.use(authenticate);
 
+const { validate } = require('../middleware/validate');
+
 // ─── Validation Rules ────────────────────────────────────
 const expenseValidation = [
   body('amount').isFloat({ gt: 0 }).withMessage('Amount must be a positive number'),
@@ -27,9 +29,35 @@ const expenseValidation = [
 ];
 
 // ═══════════════════════════════════════════════════════════
+// GET /api/expenses/export
+// Streams CSV file of user expenses for export
+// ═══════════════════════════════════════════════════════════
+router.get('/export', async (req, res, next) => {
+  try {
+    const result = await db.query(
+      'SELECT id, amount, category, date, notes, created_at FROM expenses WHERE user_id = $1 ORDER BY date DESC',
+      [req.user.id]
+    );
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="expenses_${new Date().toISOString().split('T')[0]}.csv"`);
+
+    let csvContent = 'ID,Amount,Category,Date,Notes,CreatedAt\n';
+    result.rows.forEach(row => {
+      const notesEscaped = `"${(row.notes || '').replace(/"/g, '""')}"`;
+      const formattedDate = new Date(row.date).toISOString().split('T')[0];
+      csvContent += `${row.id},${row.amount},${row.category},${formattedDate},${notesEscaped},${row.created_at.toISOString()}\n`;
+    });
+
+    res.status(200).send(csvContent);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
 // GET /api/expenses
 // Lists expenses for the authenticated user.
-// Supports: ?page=1&limit=20&category=Food&startDate=2026-01-01&endDate=2026-12-31&search=coffee
 // ═══════════════════════════════════════════════════════════
 router.get('/', async (req, res, next) => {
   try {
@@ -120,15 +148,9 @@ router.get('/:id', async (req, res, next) => {
 // ═══════════════════════════════════════════════════════════
 // POST /api/expenses
 // Creates a new expense for the authenticated user.
-// Also updates the corresponding budget's current spending.
 // ═══════════════════════════════════════════════════════════
-router.post('/', expenseValidation, async (req, res, next) => {
+router.post('/', expenseValidation, validate, async (req, res, next) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ success: false, message: errors.array()[0].msg });
-    }
-
     const { amount, category, date, notes } = req.body;
     const userId = req.user.id;
 
@@ -147,15 +169,10 @@ router.post('/', expenseValidation, async (req, res, next) => {
 
 // ═══════════════════════════════════════════════════════════
 // PUT /api/expenses/:id
-// Updates an existing expense (must belong to the authenticated user).
+// Updates an existing expense.
 // ═══════════════════════════════════════════════════════════
-router.put('/:id', expenseValidation, async (req, res, next) => {
+router.put('/:id', expenseValidation, validate, async (req, res, next) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ success: false, message: errors.array()[0].msg });
-    }
-
     const { amount, category, date, notes } = req.body;
 
     const result = await db.query(

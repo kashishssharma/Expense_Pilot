@@ -1,19 +1,22 @@
 /**
- * Global error handler middleware.
- * Catches all unhandled errors and returns a consistent JSON response.
+ * Global Error Handler Middleware.
+ * Standardizes API error responses and logs unhandled exceptions.
  */
-function errorHandler(err, req, res, next) {
-  console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
+const Logger = require('../config/logger');
 
-  // Validation errors from express-validator
+function errorHandler(err, req, res, next) {
+  Logger.error(`Unhandled error on ${req.method} ${req.path}`, err);
+
   if (err.type === 'entity.parse.failed') {
-    return res.status(400).json({ success: false, message: 'Invalid JSON in request body.' });
+    return res.status(400).json({ success: false, message: 'Invalid JSON body format in request.' });
   }
 
   const statusCode = err.statusCode || 500;
+  const responseMessage = statusCode === 500 ? 'Internal server error.' : err.message;
+
   res.status(statusCode).json({
     success: false,
-    message: statusCode === 500 ? 'Internal server error.' : err.message
+    message: responseMessage
   });
 }
 

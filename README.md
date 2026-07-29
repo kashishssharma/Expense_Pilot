@@ -1,108 +1,145 @@
-# Smart Expense Tracker
+# Expense Pilot — Smart Personal Finance Platform
 
-AI-powered personal finance tracker with spending analysis, anomaly detection, and predictive budgeting.
+Expense Pilot is a high-performance, full-stack personal finance application built with a clean 3-tier backend architecture (**Routes → Validation → Services → Database**). It provides complete expense management, category budget enforcement, real-time analytics, and a rule-based financial insights engine.
 
-## Architecture
+---
+
+## 🏛️ System Architecture
 
 ```
-Client (Next.js + React)
-        ↓
-Node.js + Express API
-        ↓
-Python/Django Intelligence
-        ↓
-PostgreSQL Database
+Client Layer (React SPA + Vite + Tailwind CSS)
+       ↓  HTTP / REST API (JWT Authenticated)
+Validation Layer (express-validator / middleware/validate.js)
+       ↓  Sanitized Request Data
+Service Layer (src/services/insightsService.js & budgetService.js)
+       ↓  SQL Prepared Statements
+Data Layer (PostgreSQL Database Pool with Indexes & Constraints)
 ```
 
-## Services
+```
+                        +----------------------------+
+                        |  React SPA (Vite + Router) |
+                        +----------------------------+
+                                      |  HTTP / REST
+                                      v
+                        +----------------------------+
+                        |  Express REST API Gateway  |
+                        +----------------------------+
+                                      |
+              +-----------------------+-----------------------+
+              |                       |                       |
+              v                       v                       v
+      +---------------+       +---------------+       +---------------+
+      |  Auth Routes  |       | Expense Routes|       | Insights Route|
+      +---------------+       +---------------+       +---------------+
+              |                       |                       |
+              |                       v (CSV Streaming)       |
+              |               +---------------+               |
+              +-------------->| Insights      |<--------------+
+                              | Service       |
+                              +---------------+
+                                      |
+                                      v
+                              +---------------+
+                              | PostgreSQL DB |
+                              | (Indexed Pool)|
+                              +---------------+
+```
 
-| Service | Tech | Port | Description |
-|---------|------|------|-------------|
-| `api/` | Node.js + Express | 5000 | Auth, expenses, budgets, analytics proxy |
-| `intelligence/` | Python + Django | 8000 | ML analytics, anomaly detection, predictions |
-| `frontend/` | Next.js + React | 3000 | Dashboard, charts, expense management |
+---
 
-## Quick Start (Local Development)
+## 🛠️ Tech Stack & Rationalization
 
-### 1. PostgreSQL
-Create a database and run the schema:
+* **Frontend**: React 18 SPA, Vite 5, React Router DOM v6, Tailwind CSS, Recharts, Lucide React.
+* **Backend**: Node.js, Express.js (3-tier layered architecture).
+* **Database**: PostgreSQL with connection pooling (`pg`), explicit indexes on `(user_id, date)` and `(user_id, category)`.
+* **Security & Auth**: JWT (JSON Web Tokens), `bcryptjs` password hashing, `helmet` security headers, CORS protection.
+* **Validation**: `express-validator` middleware for input sanitization and schema verification before service execution.
+
+---
+
+## ✨ Core Features & Engineering Highlights
+
+### 1. Financial Insights Engine (`InsightsService`)
+Deterministic, explainable rule-based recommendation engine evaluating user behavior:
+- **Category Concentration Alert**: Triggers when a single category accounts for $>40\%$ of total spend.
+- **Weekend Spikes**: Warns when average weekend spend exceeds $1.5\times$ weekday averages.
+- **Budget Overruns**: Highlights category spend exceeding defined monthly caps.
+
+### 2. Streaming CSV Data Export (`GET /api/expenses/export`)
+- Streams user expense history directly to browser as an attachment using HTTP `Content-Disposition` and `text/csv` headers.
+
+### 3. Smart Budget Shield
+- Category-level monthly caps with real-time SQL calculations (`LEFT JOIN` / subqueries) comparing actual spend vs. limits with warning progress indicators.
+
+### 4. Expense Management & Search
+- Full CRUD operations with server-side pagination, category filtering, and keyword search across notes/categories.
+
+---
+
+## 📁 Repository Structure
+
+```
+expense pilot/
+├── api/                           # Backend Express REST API
+│   ├── src/
+│   │   ├── app.js                 # App setup, CORS, Helmet, router mounts
+│   │   ├── server.js              # HTTP server listener
+│   │   ├── db/
+│   │   │   ├── pool.js            # PostgreSQL Connection Pool singleton
+│   │   │   └── schema.sql         # SQL DDL (Users, Expenses, Budgets + Indexes)
+│   │   ├── middleware/
+│   │   │   ├── auth.js            # JWT protection middleware
+│   │   │   ├── validate.js        # Request validation interceptor
+│   │   │   └── errorHandler.js    # Global error response handler
+│   │   ├── routes/
+│   │   │   ├── auth.js            # Authentication routes (/api/auth)
+│   │   │   ├── expenses.js        # Expense CRUD & CSV export (/api/expenses)
+│   │   │   ├── budgets.js         # Budget caps & progress (/api/budgets)
+│   │   │   └── insights.js        # Financial insights & analytics (/api/insights)
+│   │   └── services/              # Domain Business Logic Layer
+│   │       └── insightsService.js # Business rules & SQL aggregations
+│   └── package.json
+│
+└── frontend/                      # Pure React SPA Client
+    ├── index.html
+    ├── vite.config.js
+    ├── src/
+    │   ├── App.jsx                # React Router DOM v6 route definitions
+    │   ├── main.jsx               # React entry point
+    │   ├── components/Layout.js   # Navigation sidebar & layout frame
+    │   ├── lib/api.js             # Axios client with JWT interceptors
+    │   └── pages/                 # SPA Views (Dashboard, Expenses, Budgets, Insights)
+    └── package.json
+```
+
+---
+
+## 🚀 Quick Start
+
+### 1. Database Setup
 ```bash
 createdb expense_tracker
 psql expense_tracker < api/src/db/schema.sql
 ```
 
-### 2. Node.js API
+### 2. Start API Gateway (Port 5000)
 ```bash
 cd api
-cp .env.example .env    # Edit DATABASE_URL
+cp .env.example .env    # Configure DATABASE_URL & JWT_SECRET
 npm install
-npm run db:init         # Create tables
-npm run dev             # Starts on :5000
+npm run dev
 ```
 
-### 3. Python Intelligence Service
-```bash
-cd intelligence
-cp .env.example .env    # Edit DATABASE_URL
-pip install -r requirements.txt
-python manage.py runserver 8000   # Starts on :8000
-```
-
-### 4. Frontend
+### 3. Start Frontend Client (Port 3000)
 ```bash
 cd frontend
-cp .env.example .env.local    # Edit API URL
 npm install
-npm run dev                   # Starts on :3000
+npm run dev
 ```
 
-## API Endpoints
+---
 
-### Auth
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | Create account |
-| POST | `/api/auth/login` | Sign in |
-| GET | `/api/auth/me` | Get current user |
+## 📝 Recommended Resume Bullet Point
 
-### Expenses
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/expenses` | List (with filters & pagination) |
-| POST | `/api/expenses` | Create |
-| PUT | `/api/expenses/:id` | Update |
-| DELETE | `/api/expenses/:id` | Delete |
-
-### Budgets
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/budgets` | List with spending |
-| GET | `/api/budgets/summary` | Monthly overview |
-| POST | `/api/budgets` | Create/update |
-| DELETE | `/api/budgets/:id` | Delete |
-
-### Analytics
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/analytics/overview` | Dashboard stats (local SQL) |
-| GET | `/api/analytics/spending` | ML spending patterns |
-| GET | `/api/analytics/anomalies` | Anomaly detection |
-| GET | `/api/analytics/predictions` | Spending forecast |
-| GET | `/api/analytics/recommendations` | Budget recommendations |
-
-## Deployment
-
-### Frontend
-1. Build and export the Next.js app
-2. Set `NEXT_PUBLIC_API_URL` to your API server URL
-3. Deploy to your preferred static hosting or Node.js server
-
-### API
-1. Deploy as a Node.js service
-2. Connect to a PostgreSQL database
-3. Set `DATABASE_URL`, `JWT_SECRET`, `INTELLIGENCE_URL`, `FRONTEND_URL`
-
-### Intelligence
-1. Deploy as a Python service
-2. Set `DATABASE_URL`, `SECRET_KEY`
-3. Start command: `gunicorn config.wsgi:application --bind 0.0.0.0:$PORT`
+> **Expense Pilot** – Built a full-stack expense management platform using React, Express.js, PostgreSQL, and JWT authentication. Designed RESTful APIs with input validation and CSV streaming, implemented a 3-tier backend architecture (Routes → Validation → Services → DB), and engineered a rule-based financial insights engine to generate deterministic spending advice.

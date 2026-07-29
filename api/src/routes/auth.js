@@ -1,13 +1,16 @@
 /**
- * Authentication routes — register, login.
- * POST /api/auth/register — Create a new account
- * POST /api/auth/login    — Sign in and receive a JWT
+ * Authentication routes — register, login, me.
+ * Includes rate limiting, schema validation, and JWT generation.
  */
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { body, validationResult } = require('express-validator');
+const { body } = require('express-validator');
+const config = require('../config');
 const db = require('../db/pool');
+const { validate } = require('../middleware/validate');
+const { authRateLimiter } = require('../middleware/rateLimiter');
+const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -27,32 +30,23 @@ const loginValidation = [
 function generateToken(user) {
   return jwt.sign(
     { id: user.id, email: user.email },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    config.jwt.secret,
+    { expiresIn: config.jwt.expiresIn }
   );
 }
 
 // ═══════════════════════════════════════════════════════════
 // POST /api/auth/register
-// Creates a new user account and returns a JWT token.
 // ═══════════════════════════════════════════════════════════
-router.post('/register', registerValidation, async (req, res, next) => {
+router.post('/register', authRateLimiter, registerValidation, validate, async (req, res, next) => {
   try {
-    // Check validation
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ success: false, message: errors.array()[0].msg });
-    }
-
     const { name, email, password } = req.body;
 
-    // Check if email already exists
     const existing = await db.query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) {
       return res.status(409).json({ success: false, message: 'An account with this email already exists.' });
     }
 
-    // Hash password and create user
     const passwordHash = await bcrypt.hash(password, 12);
     const result = await db.query(
       'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email, created_at',
@@ -73,18 +67,11 @@ router.post('/register', registerValidation, async (req, res, next) => {
 
 // ═══════════════════════════════════════════════════════════
 // POST /api/auth/login
-// Authenticates a user and returns a JWT token.
 // ═══════════════════════════════════════════════════════════
-router.post('/login', loginValidation, async (req, res, next) => {
+router.post('/login', authRateLimiter, loginValidation, validate, async (req, res, next) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ success: false, message: errors.array()[0].msg });
-    }
-
     const { email, password } = req.body;
 
-    // Find user by email
     const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
     if (result.rows.length === 0) {
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
@@ -92,7 +79,6 @@ router.post('/login', loginValidation, async (req, res, next) => {
 
     const user = result.rows[0];
 
-    // Verify password
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
@@ -111,10 +97,7 @@ router.post('/login', loginValidation, async (req, res, next) => {
 
 // ═══════════════════════════════════════════════════════════
 // GET /api/auth/me
-// Returns the currently authenticated user's profile.
 // ═══════════════════════════════════════════════════════════
-const { authenticate } = require('../middleware/auth');
-
 router.get('/me', authenticate, async (req, res, next) => {
   try {
     const result = await db.query(

@@ -1,27 +1,38 @@
 /**
  * Server entry point.
- * Loads environment variables, verifies DB connection, and starts Express.
+ * Initializes database pool connection and starts HTTP server listener.
  */
-require('dotenv').config();
+const config = require('./config');
+const Logger = require('./config/logger');
 const app = require('./app');
 const db = require('./db/pool');
 
-const PORT = process.env.PORT || 5000;
-
-async function start() {
+async function startServer() {
   try {
-    // Verify database connection
+    // Verify database connectivity
     const result = await db.query('SELECT NOW()');
-    console.log(`✅ PostgreSQL connected at ${result.rows[0].now}`);
+    Logger.info(`PostgreSQL database connected at ${result.rows[0].now}`);
 
-    app.listen(PORT, () => {
-      console.log(`🚀 API server running on port ${PORT}`);
-      console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+    const server = app.listen(config.port, () => {
+      Logger.info(`Express API server running on port ${config.port} [${config.env}]`);
     });
+
+    // Graceful shutdown handling
+    const shutdown = (signal) => {
+      Logger.warn(`Received ${signal}. Gracefully shutting down HTTP server...`);
+      server.close(() => {
+        Logger.info('HTTP server closed. Terminating process.');
+        process.exit(0);
+      });
+    };
+
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
+
   } catch (error) {
-    console.error('❌ Failed to start server:', error.message);
+    Logger.error('Failed to start API server', error);
     process.exit(1);
   }
 }
 
-start();
+startServer();

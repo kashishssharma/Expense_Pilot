@@ -16,6 +16,8 @@ const db = require('../db/pool');
 const router = express.Router();
 router.use(authenticate);
 
+const { validate } = require('../middleware/validate');
+
 const budgetValidation = [
   body('category').trim().notEmpty().withMessage('Category is required'),
   body('monthly_limit').isFloat({ gt: 0 }).withMessage('Monthly limit must be a positive number')
@@ -120,13 +122,8 @@ router.get('/summary', async (req, res, next) => {
 // Creates a new budget. If the user already has a budget for this category,
 // it updates the existing one (upsert).
 // ═══════════════════════════════════════════════════════════
-router.post('/', budgetValidation, async (req, res, next) => {
+router.post('/', budgetValidation, validate, async (req, res, next) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ success: false, message: errors.array()[0].msg });
-    }
-
     const { category, monthly_limit } = req.body;
     const userId = req.user.id;
 

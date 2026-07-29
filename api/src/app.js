@@ -1,48 +1,59 @@
 /**
  * Express application setup.
- * Configures middleware, routes, and error handling.
+ * Configures middleware, security, routes, and global error handling.
  */
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 
+const config = require('./config');
 const authRoutes = require('./routes/auth');
 const expenseRoutes = require('./routes/expenses');
 const budgetRoutes = require('./routes/budgets');
-const analyticsRoutes = require('./routes/analytics');
-const goalsRoutes = require('./routes/goals');
+const insightsRoutes = require('./routes/insights');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
-// ─── Security & Parsing ─────────────────────────────────
+// ─── Security & Middleware ──────────────────────────────
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: config.frontendUrl,
   credentials: true
 }));
 app.use(express.json({ limit: '5mb' }));
-app.use(morgan('dev'));
 
-// ─── Health Check ────────────────────────────────────────
+// Request logging format
+if (config.env !== 'test') {
+  app.use(morgan(':method :url :status :res[content-length] - :response-time ms'));
+}
+
+// ─── Health Check Endpoint ──────────────────────────────
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'expense-tracker-api', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    service: 'expense-tracker-api',
+    environment: config.env,
+    timestamp: new Date().toISOString()
+  });
 });
 
-// ─── API Routes ──────────────────────────────────────────
+// ─── API Routes Mounting ────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/budgets', budgetRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/goals', goalsRoutes);
+app.use('/api', insightsRoutes);
 
-// ─── 404 Handler ─────────────────────────────────────────
+// ─── 404 Route Handler ──────────────────────────────────
 app.use((req, res) => {
-  res.status(404).json({ success: false, message: `Route ${req.method} ${req.path} not found` });
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.method} ${req.path} not found`
+  });
 });
 
-// ─── Global Error Handler ────────────────────────────────
+// ─── Global Error Handler ───────────────────────────────
 app.use(errorHandler);
 
 module.exports = app;

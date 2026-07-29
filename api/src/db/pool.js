@@ -1,20 +1,25 @@
 /**
- * PostgreSQL connection pool.
- * Uses DATABASE_URL from environment for flexibility across local / Railway / Render.
+ * PostgreSQL connection pool singleton.
+ * Uses centralized config and structured logging.
  */
 const { Pool } = require('pg');
+const config = require('../config');
+const Logger = require('../config/logger');
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  // Enable SSL for production (Railway/Render)
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  connectionString: config.db.connectionString,
+  ssl: config.db.ssl,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000
 });
 
+pool.on('connect', () => {
+  Logger.info('New client connected to PostgreSQL pool');
+});
+
 pool.on('error', (err) => {
-  console.error('Unexpected database pool error:', err);
+  Logger.error('Unexpected PostgreSQL pool error', err);
 });
 
 module.exports = {
