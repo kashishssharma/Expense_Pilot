@@ -256,7 +256,7 @@ export default function ExpensesPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Amount ($)</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Amount (₹)</label>
                 <input
                   type="number"
                   step="0.01"
