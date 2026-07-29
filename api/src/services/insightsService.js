@@ -59,7 +59,7 @@ class InsightsService {
       lastMonthTotal,
       changePercentage,
       transactionCount,
-      topCategory: categories.length > 0 ? categories[0].category : null,
+      topCategory: categories.length > 0 ? categories[0] : null,
       categoryBreakdown: categories
     };
   }
@@ -133,26 +133,44 @@ class InsightsService {
       categoryTotals[e.category] = (categoryTotals[e.category] || 0) + e.amount;
     });
 
-    let topCategory = null;
-    let topCategoryAmount = 0;
+    const FIXED_CATEGORIES = ['Rent', 'Housing', 'Bills', 'Utilities', 'Healthcare', 'Education', 'EMI'];
+
+    // Rule 1: High Discretionary Spending Concentration (>30% of total spend in 1 variable category)
+    let topDiscretionaryCategory = null;
+    let topDiscretionaryAmount = 0;
 
     for (const [cat, amt] of Object.entries(categoryTotals)) {
-      if (amt > topCategoryAmount) {
-        topCategoryAmount = amt;
-        topCategory = cat;
+      if (!FIXED_CATEGORIES.includes(cat) && amt > topDiscretionaryAmount) {
+        topDiscretionaryAmount = amt;
+        topDiscretionaryCategory = cat;
       }
     }
 
-    if (topCategory && totalSpent > 0) {
-      const concentrationPct = (topCategoryAmount / totalSpent) * 100;
-      if (concentrationPct > 40) {
-        const potentialSaving = parseFloat((topCategoryAmount * 0.10).toFixed(2));
+    if (topDiscretionaryCategory && totalSpent > 0) {
+      const concentrationPct = (topDiscretionaryAmount / totalSpent) * 100;
+      if (concentrationPct >= 15) {
+        const potentialSaving = parseFloat((topDiscretionaryAmount * 0.10).toFixed(2));
         insights.push({
           type: 'high_concentration',
           priority: 'high',
-          message: `Category "${topCategory}" consumes ${concentrationPct.toFixed(0)}% of your total spending. Reducing it by 10% would save ₹${potentialSaving}/month.`,
+          message: `Discretionary category "${topDiscretionaryCategory}" accounts for ${concentrationPct.toFixed(0)}% of your total spending. A 10% reduction could save ₹${potentialSaving}/month.`,
           potentialSavings: potentialSaving
         });
+      }
+    }
+
+    // Informational note for high fixed commitment (e.g. Rent taking >50%)
+    for (const [cat, amt] of Object.entries(categoryTotals)) {
+      if (FIXED_CATEGORIES.includes(cat)) {
+        const pct = (amt / totalSpent) * 100;
+        if (pct >= 50) {
+          insights.push({
+            type: 'fixed_expense_info',
+            priority: 'low',
+            message: `Fixed commitment "${cat}" accounts for ${pct.toFixed(0)}% of your monthly budget (₹${amt.toFixed(2)}).`,
+            potentialSavings: 0
+          });
+        }
       }
     }
 

@@ -190,7 +190,7 @@ export default function ExpensesPage() {
                 expenses.map(exp => (
                   <tr key={exp.id} className="hover:bg-surface-800/40 transition-colors">
                     <td className="px-6 py-4 font-medium text-white">{exp.category}</td>
-                    <td className="px-6 py-4 font-semibold text-brand-400">${parseFloat(exp.amount).toFixed(2)}</td>
+                    <td className="px-6 py-4 font-semibold text-brand-400">₹{parseFloat(exp.amount).toFixed(2)}</td>
                     <td className="px-6 py-4 text-slate-300">
                       {new Date(exp.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                     </td>

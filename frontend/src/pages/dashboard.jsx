@@ -38,7 +38,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
         <StatCard icon={IndianRupee} label="This Month" value={`₹${(o.currentMonth?.total || 0).toLocaleString()}`} sub={`${Math.abs(change)}% ${change >= 0 ? 'more' : 'less'} than last month`} trend={change >= 0 ? 'up' : 'down'} color="brand" />
         <StatCard icon={ShoppingBag} label="Transactions" value={o.currentMonth?.transactionCount || 0} sub="This month" color="cyan" />
-        <StatCard icon={TrendingUp} label="Top Category" value={o.topCategory?.category || '—'} sub={o.topCategory ? `₹${parseFloat(o.topCategory.total).toLocaleString()}` : ''} color="violet" />
+        <StatCard icon={TrendingUp} label="Top Category" value={o.topCategory?.category || '—'} sub={o.topCategory && o.topCategory.total ? `₹${parseFloat(o.topCategory.total).toLocaleString()}` : ''} color="violet" />
         <StatCard icon={TrendingDown} label="Last Month" value={`₹${(o.lastMonth?.total || 0).toLocaleString()}`} sub="Previous period" color="amber" />
       </div>
 
