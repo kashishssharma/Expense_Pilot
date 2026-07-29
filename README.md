@@ -4,6 +4,22 @@ Expense Pilot is a high-performance, full-stack personal finance application bui
 
 ---
 
+## 📸 Application Screenshots
+
+### 📊 Dashboard Overview
+![Dashboard Overview](docs/screenshots/dashboard.png)
+
+### 💸 Expenses Management & History
+![Expenses View](docs/screenshots/expenses.png)
+
+### 🎯 Smart Category Budgets
+![Budgets View](docs/screenshots/budgets.png)
+
+### 💡 Rule-Based Financial Insights Engine
+![Financial Insights View](docs/screenshots/insights.png)
+
+---
+
 ## 🏛️ System Architecture
 
 ```
