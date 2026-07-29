@@ -156,6 +156,37 @@ npm run dev
 
 ---
 
+## 🌐 Production Deployment Guide (100% Free Tier)
+
+### Step 1: Database (Neon.tech / Supabase / Render PostgreSQL)
+1. Create a free PostgreSQL database instance on [Neon.tech](https://neon.tech) or [Render](https://render.com).
+2. Copy the connection string (`DATABASE_URL`), for example:
+   `postgresql://user:password@ep-xyz.us-east-2.aws.neon.tech/expense_tracker?sslmode=require`
+3. Run the database initialization schema:
+   ```bash
+   psql "YOUR_DATABASE_URL" < api/src/db/schema.sql
+   ```
+
+### Step 2: Backend API Gateway (Render / Railway / Koyeb)
+1. Create a new **Web Service** connected to your GitHub repository on [Render](https://render.com).
+2. Set the **Root Directory** to `api`.
+3. Set the **Build Command** to `npm install` and **Start Command** to `npm start`.
+4. Add the following **Environment Variables**:
+   * `NODE_ENV`: `production`
+   * `DATABASE_URL`: *(Your PostgreSQL URL from Step 1)*
+   * `JWT_SECRET`: *(A secure random string)*
+   * `FRONTEND_URL`: *(Your deployed Vercel frontend URL from Step 3, e.g. `https://expense-pilot.vercel.app`)*
+
+### Step 3: Frontend Client (Vercel)
+1. Import your repository into [Vercel](https://vercel.com).
+2. Set the **Root Directory** to `frontend`.
+3. Set the **Environment Variable**:
+   * `VITE_API_URL`: *(Your Render backend URL from Step 2, e.g. `https://expense-pilot-api.onrender.com`)*
+4. Deploy! Vercel will automatically build the React SPA with rewrite rules configured in `vercel.json`.
+
+---
+
 ## 📝 Recommended Resume Bullet Point
 
 > **Expense Pilot** – Built a full-stack expense management platform using React, Express.js, PostgreSQL, and JWT authentication. Designed RESTful APIs with input validation and CSV streaming, implemented a 3-tier backend architecture (Routes → Validation → Services → DB), and engineered a rule-based financial insights engine to generate deterministic spending advice.
+
