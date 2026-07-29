@@ -107,7 +107,7 @@ expense pilot/
     ├── src/
     │   ├── App.jsx                # React Router DOM v6 route definitions
     │   ├── main.jsx               # React entry point
-    │   ├── components/Layout.js   # Navigation sidebar & layout frame
+    │   ├── components/Layout.jsx  # Navigation sidebar & layout frame
     │   ├── lib/api.js             # Axios client with JWT interceptors
     │   └── pages/                 # SPA Views (Dashboard, Expenses, Budgets, Insights)
     └── package.json
