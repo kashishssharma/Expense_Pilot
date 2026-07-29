@@ -1,23 +1,9 @@
-# Node
+# Dependencies
 node_modules/
-dist/
-build/
-.next/
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
 venv/
-env/
-.env
-.venv
-pip-log.txt
-pip-delete-this-directory.txt
-db.sqlite3
+.venv/
 
-# Environment variables
+# Environment Variables & Secrets (CRITICAL)
 .env
 .env.local
 .env.development.local
@@ -25,11 +11,19 @@ db.sqlite3
 .env.production.local
 *.env
 
+# Build Artifacts & Generated Files
+dist/
+build/
+.next/
+coverage/
+
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 
-# OS
+# OS & IDE System Files
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
